@@ -5,7 +5,7 @@
  *
  *  Name: Jonathan Edison Velasquez Caceres ID: 154657217 Date: 2023-03-24
  *
- *  Online (Cyclic) Link:
+ *  Online (Cyclic) Link: https://fair-pear-crane-slip.cyclic.app
  *
  ********************************************************************************/
 
@@ -20,17 +20,14 @@ const streamifier = require("streamifier");
 
 var HTTP_PORT = process.env.PORT || 8080;
 
-//Express built-in "bodyParser" - to access form data in http body
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static("public"));
 
-// Import the data-service module
 const dataService = require("./data-service");
 const { MulterError } = require("multer");
 const { addImage } = require("./data-service");
 
-//Set the cloudinary config
 cloudinary.config({
   cloud_name: "dush6hmip",
   api_key: "243988794991271",
@@ -38,19 +35,16 @@ cloudinary.config({
   secure: true,
 });
 
-//"upload" variable without any disk storage
 const upload = multer();
 
-//built-in "express.urlencoded" middleware
 app.use(express.urlencoded({ extended: true }));
 
-// call this function after the http server starts listening for requests
 function onHttpStart() {
   console.log(
     "\n****Express http server listening on: " + HTTP_PORT + "****\n\n\n\n"
   );
 }
-//use the new "express-handlebars" module
+
 app.engine(".hbs", exphbs.engine({ extname: "hbs" }));
 
 app.set("view engine", ".hbs");
@@ -85,18 +79,14 @@ app.engine(
   })
 );
 
-// setup a 'route' to listen on the default url path (http://localhost)
 app.get("/", (req, res) => {
   res.render("home");
 });
 
-// setup another route to listen on /about
 app.get("/about", (req, res) => {
   res.render("about");
 });
 
-//***************************************STUDENT****************************************** */
-// Add route for students/add
 app.get("/students/add", (req, res) => {
   dataService
     .getPrograms()
@@ -104,7 +94,6 @@ app.get("/students/add", (req, res) => {
       res.render("addStudent", { programs: data });
     })
     .catch((err) => {
-      // Render the students view with an error message
       res.render("addStudent", { message: err.message });
     });
 });
@@ -242,8 +231,6 @@ app.get("/student/:studentID", (req, res) => {
     });
 });
 
-//***************************************PROGRAMS****************************************** */
-
 app.get("/programs/add", (req, res) => {
   res.render("addProgram");
 });
@@ -319,7 +306,6 @@ app.post("/programs/add", function (req, res) {
     });
 });
 
-//***************************************IMAGES******************************************** */
 // Add route for images/add
 app.get("/images/add", (req, res) => {
   res.render("addImage");

@@ -3,7 +3,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <!-- Latest compiled and minified Bootstrap 3.3.7 CSS -->
     <link
       rel="stylesheet"
       href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
@@ -16,7 +15,6 @@
   <body>
     <nav class="navbar navbar-default">
       <div class="container-fluid">
-        <!-- Brand and toggle get grouped for better mobile display -->
         <div class="navbar-header">
           <button
             type="button"
@@ -39,13 +37,11 @@
           <ul class="nav navbar-nav">
             {{#navLink "/"}}Home{{/navLink}}
             {{#navLink "/about"}}About{{/navLink}}
-            {{!-- {{#navLink '/students/add'}}Add Student{{/navLink}}
-            {{#navLink '/images/add'}}Add Image{{/navLink}} --}}
+
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li><a href="/images">Images</a></li>
             <li><a href="/students">Students</a></li>
-            {{! <li><a href="/intlstudents">Int'l Students</a></li> }}
             <li><a href="/programs">Programs</a></li>
           </ul>
         </div><!-- /.navbar-collapse -->
@@ -54,15 +50,11 @@
     <div class="container">
       {{{body}}}
     </div>
-
-    <!-- Latest compiled and minified jQuery 3.2.1 JavaScript -->
     <script
       src="https://code.jquery.com/jquery-3.2.1.min.js"
       integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
       crossorigin="anonymous"
     ></script>
-
-    <!-- Latest compiled and minified Bootstrap 3.3.7 JavaScript -->
     <script
       src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
       integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"

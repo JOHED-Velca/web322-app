@@ -64,7 +64,6 @@ var Program = sequelize.define("Program", {
   programName: Sequelize.STRING,
 });
 
-//define a relationship between Students and Programs, specifically
 Program.hasMany(Student, { foreignKey: "program" });
 
 function initialize() {
