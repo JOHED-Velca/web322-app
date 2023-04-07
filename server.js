@@ -1,9 +1,9 @@
 /*********************************************************************************
- *  WEB322 – Assignment 05
+ *  WEB322 – Assignment 06
  *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source
  *  (including 3rd party web sites) or distributed to other students.
  *
- *  Name: Jonathan Edison Velasquez Caceres ID: 154657217 Date: 2023-03-24
+ *  Name: Jonathan Edison Velasquez Caceres ID: 154657217 Date: 2023-04-07
  *
  *  Online (Cyclic) Link: https://fair-pear-crane-slip.cyclic.app
  *
@@ -14,20 +14,34 @@ var app = express();
 const path = require("path");
 const multer = require("multer");
 const exphbs = require("express-handlebars");
+const clientSessions = require("client-sessions");
 
 const cloudinary = require("cloudinary").v2;
 const streamifier = require("streamifier");
 
 var HTTP_PORT = process.env.PORT || 8080;
 
+//Express built-in "bodyParser" - to access form data in http body
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static("public"));
 
+app.use(
+  clientSessions({
+    cookieName: "session", // Name of the session cookie
+    secret: "secret_key", // Secret key for the session cookie
+    duration: 30 * 60 * 1000, // Session duration in milliseconds
+    activeDuration: 5 * 60 * 1000, // Session active duration in milliseconds
+  })
+);
+
+// Import the data-service module
 const dataService = require("./data-service");
+const dataServiceAuth = require("./data-service-auth");
 const { MulterError } = require("multer");
 const { addImage } = require("./data-service");
 
+//Set the cloudinary config
 cloudinary.config({
   cloud_name: "dush6hmip",
   api_key: "243988794991271",
@@ -35,16 +49,33 @@ cloudinary.config({
   secure: true,
 });
 
+//"upload" variable without any disk storage
 const upload = multer();
 
+//built-in "express.urlencoded" middleware
 app.use(express.urlencoded({ extended: true }));
 
+app.use(function (req, res, next) {
+  res.locals.session = req.session;
+  next();
+});
+
+// call this function after the http server starts listening for requests
 function onHttpStart() {
   console.log(
     "\n****Express http server listening on: " + HTTP_PORT + "****\n\n\n\n"
   );
 }
 
+function ensureLogin(req, res, next) {
+  if (!req.session.user) {
+    res.redirect("/login");
+  } else {
+    next();
+  }
+}
+
+//use the new "express-handlebars" module
 app.engine(".hbs", exphbs.engine({ extname: "hbs" }));
 
 app.set("view engine", ".hbs");
@@ -79,26 +110,31 @@ app.engine(
   })
 );
 
+// setup a 'route' to listen on the default url path (http://localhost)
 app.get("/", (req, res) => {
   res.render("home");
 });
 
+// setup another route to listen on /about
 app.get("/about", (req, res) => {
   res.render("about");
 });
 
-app.get("/students/add", (req, res) => {
+//***************************************STUDENT****************************************** */
+// Add route for students/add
+app.get("/students/add", ensureLogin, (req, res) => {
   dataService
     .getPrograms()
     .then((data) => {
       res.render("addStudent", { programs: data });
     })
     .catch((err) => {
+      // Render the students view with an error message
       res.render("addStudent", { message: err.message });
     });
 });
 
-app.get("/students", (req, res) => {
+app.get("/students", ensureLogin, (req, res) => {
   const status = req.query.status;
   const program = req.query.program;
   const credential = req.query.credential;
@@ -146,7 +182,7 @@ app.get("/students", (req, res) => {
   }
 });
 
-app.get("/students/delete/:studentID", (req, res) => {
+app.get("/students/delete/:studentID", ensureLogin, (req, res) => {
   const studentID = req.params.studentID;
   dataService
     .deleteStudentById(studentID)
@@ -160,7 +196,7 @@ app.get("/students/delete/:studentID", (req, res) => {
     });
 });
 
-app.post("/student/update", (req, res) => {
+app.post("/student/update", ensureLogin, (req, res) => {
   console.log(req.body.studentID);
   dataService
     .updateStudent(req.body)
@@ -173,7 +209,7 @@ app.post("/student/update", (req, res) => {
     });
 });
 
-app.post("/students/add", function (req, res) {
+app.post("/students/add", ensureLogin, function (req, res) {
   dataService
     .addStudent(req.body)
     .then(() => {
@@ -185,7 +221,7 @@ app.post("/students/add", function (req, res) {
     });
 });
 
-app.get("/student/:studentID", (req, res) => {
+app.get("/student/:studentID", ensureLogin, (req, res) => {
   // initialize an empty object to store the values
   let viewData = {};
 
@@ -231,11 +267,13 @@ app.get("/student/:studentID", (req, res) => {
     });
 });
 
-app.get("/programs/add", (req, res) => {
+//***************************************PROGRAMS****************************************** */
+
+app.get("/programs/add", ensureLogin, (req, res) => {
   res.render("addProgram");
 });
 
-app.get("/programs", (req, res) => {
+app.get("/programs", ensureLogin, (req, res) => {
   dataService
     .getPrograms()
     .then((data) => {
@@ -252,7 +290,7 @@ app.get("/programs", (req, res) => {
     });
 });
 
-app.get("/program/:programCode", (req, res) => {
+app.get("/program/:programCode", ensureLogin, (req, res) => {
   const programCode = req.params.programCode;
 
   dataService
@@ -269,7 +307,7 @@ app.get("/program/:programCode", (req, res) => {
     });
 });
 
-app.get("/programs/delete/:programCode", (req, res) => {
+app.get("/programs/delete/:programCode", ensureLogin, (req, res) => {
   dataService
     .deleteProgramByCode(req.params.programCode)
     .then(() => {
@@ -282,7 +320,7 @@ app.get("/programs/delete/:programCode", (req, res) => {
     });
 });
 
-app.post("/program/update", (req, res) => {
+app.post("/program/update", ensureLogin, (req, res) => {
   dataService
     .updateProgram(req.body)
     .then(() => {
@@ -294,7 +332,7 @@ app.post("/program/update", (req, res) => {
     });
 });
 
-app.post("/programs/add", function (req, res) {
+app.post("/programs/add", ensureLogin, function (req, res) {
   dataService
     .addProgram(req.body)
     .then(() => {
@@ -306,12 +344,13 @@ app.post("/programs/add", function (req, res) {
     });
 });
 
+//***************************************IMAGES******************************************** */
 // Add route for images/add
-app.get("/images/add", (req, res) => {
+app.get("/images/add", ensureLogin, (req, res) => {
   res.render("addImage");
 });
 
-app.get("/images", function (req, res) {
+app.get("/images", ensureLogin, function (req, res) {
   dataService
     .getImages()
     .then(function (data) {
@@ -326,60 +365,116 @@ app.get("/images", function (req, res) {
     });
 });
 
-app.post("/images/add", upload.single("imageFile"), function (req, res) {
-  if (req.file) {
-    let streamUpload = (req) => {
-      return new Promise((resolve, reject) => {
-        let stream = cloudinary.uploader.upload_stream((error, result) => {
-          if (result) {
-            resolve(result);
-          } else {
-            reject(error);
-          }
+app.post(
+  "/images/add",
+  ensureLogin,
+  upload.single("imageFile"),
+  function (req, res) {
+    if (req.file) {
+      let streamUpload = (req) => {
+        return new Promise((resolve, reject) => {
+          let stream = cloudinary.uploader.upload_stream((error, result) => {
+            if (result) {
+              resolve(result);
+            } else {
+              reject(error);
+            }
+          });
+          streamifier.createReadStream(req.file.buffer).pipe(stream);
         });
-        streamifier.createReadStream(req.file.buffer).pipe(stream);
-      });
-    };
+      };
 
-    async function upload(req) {
-      let result = await streamUpload(req);
-      console.log(result);
-      return result;
+      async function upload(req) {
+        let result = await streamUpload(req);
+        console.log(result);
+        return result;
+      }
+
+      upload(req).then((uploaded) => {
+        processForm(uploaded);
+      });
+    } else {
+      processForm("");
     }
 
-    upload(req).then((uploaded) => {
-      processForm(uploaded);
+    function processForm(uploaded) {
+      let imgData = {};
+      imgData.imageId = uploaded.public_id;
+      imgData.imageUrl = uploaded.url;
+      imgData.version = uploaded.version;
+      imgData.width = uploaded.width;
+      imgData.height = uploaded.height;
+      imgData.format = uploaded.format;
+      imgData.resourceType = uploaded.resource_type;
+      imgData.uploadedAt = uploaded.created_at;
+      imgData.originalFileName = req.file.originalname;
+      imgData.mimeType = req.file.mimetype;
+
+      console.log("imgData: ", imgData);
+
+      dataService
+        .addImage(imgData)
+        .then((data) => {
+          console.log("Image added successfully: ", data);
+          res.redirect("/images");
+        })
+        .catch((err) => {
+          console.log("Error adding image: " + err);
+          res.status(500).send("Error adding image: " + err);
+        });
+    }
+  }
+);
+
+//***************************************USER AUTH******************************************** */
+app.get("/login", (req, res) => {
+  res.render("login", {});
+});
+
+app.post("/login", (req, res) => {
+  req.body.userAgent = req.get("User-Agent");
+
+  dataServiceAuth
+    .checkUser(req.body)
+    .then((user) => {
+      req.session.user = {
+        userName: user.userName,
+        email: user.email,
+        loginHistory: user.loginHistory,
+      };
+
+      res.redirect("/students");
+    })
+    .catch((err) => {
+      res.render("login", { errorMessage: err, userName: req.body.userName });
     });
-  } else {
-    processForm("");
-  }
+});
 
-  function processForm(uploaded) {
-    let imgData = {};
-    imgData.imageId = uploaded.public_id;
-    imgData.imageUrl = uploaded.url;
-    imgData.version = uploaded.version;
-    imgData.width = uploaded.width;
-    imgData.height = uploaded.height;
-    imgData.format = uploaded.format;
-    imgData.resourceType = uploaded.resource_type;
-    imgData.uploadedAt = uploaded.created_at;
-    imgData.originalFileName = req.file.originalname;
-    imgData.mimeType = req.file.mimetype;
+app.get("/register", (req, res) => {
+  res.render("register", {});
+});
 
-    console.log("imgData: ", imgData);
-
-    dataService
-      .addImage(imgData)
-      .then((data) => {
-        console.log("Image added successfully: ", data);
-        res.redirect("/images");
-      })
-      .catch((err) => {
-        console.log("Error adding image: " + err);
-        res.status(500).send("Error adding image: " + err);
+app.post("/register", (req, res) => {
+  dataServiceAuth
+    .registerUser(req.body)
+    .then(() => {
+      res.render("register", { successMessage: "User created" });
+    })
+    .catch((err) => {
+      res.render("register", {
+        errorMessage: err,
+        userName: req.body.userName,
       });
-  }
+    });
+});
+
+app.get("/logout", (req, res) => {
+  req.session.reset();
+  res.redirect("/");
+});
+
+app.get("/userHistory", ensureLogin, (req, res) => {
+  res.render("userHistory", {});
 });
 
 app.use(function (req, res, next) {
@@ -396,8 +491,11 @@ app.use((req, res) => {
 dataService
   .initialize()
   .then(() => {
+    return dataServiceAuth.initialize();
+  })
+  .then(() => {
     app.listen(HTTP_PORT, onHttpStart);
   })
   .catch((err) => {
-    res.send("Error", err);
+    console.log(`unable to start server: ${err}`);
   });
